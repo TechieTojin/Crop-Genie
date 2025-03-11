@@ -29,6 +29,8 @@ export async function getCurrentUser() {
 }
 
 export async function resetPassword(email: string) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://kisanai.app/reset-password',
+  });
   return { error };
 }

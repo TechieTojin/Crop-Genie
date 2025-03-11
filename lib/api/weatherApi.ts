@@ -3,8 +3,10 @@ import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 
 // OpenWeatherMap API key
-const OPENWEATHER_API_KEY = 'YOUR_OPENWEATHER_API_KEY'; // Replace with your actual API key
-const WEATHERAPI_KEY = 'YOUR_WEATHERAPI_KEY'; // Replace with your actual API key
+const OPENWEATHER_API_KEY = Constants.expoConfig?.extra?.EXPO_PUBLIC_OPENWEATHER_API_KEY || 
+                           process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY;
+const WEATHERAPI_KEY = Constants.expoConfig?.extra?.EXPO_PUBLIC_WEATHERAPI_KEY || 
+                      process.env.EXPO_PUBLIC_WEATHERAPI_KEY;
 
 // Base URLs
 const OPENWEATHER_BASE_URL = 'https://api.openweathermap.org/data/2.5';
