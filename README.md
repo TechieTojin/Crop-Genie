@@ -1,22 +1,47 @@
-# 🌾 Harvesting the Future: AI Solutions for Smallholder Farmers
-An AI-powered mobile and web application designed to help smallholder farmers optimize crop monitoring, pest detection, and resource management.
+# Harvesting the Future: AI Solutions for Smallholder Farmers
 
+## 🌱 Overview
+**Harvesting the Future** is an AI-driven smart farming solution designed to assist smallholder farmers in optimizing crop management, detecting pests early, and improving overall productivity. By leveraging AI-powered real-time alerts, multi-language support, and real-time weather data, this platform empowers farmers with actionable insights to make informed decisions.
 
-# 🔥 Features
-Crop Health Monitoring – AI-driven image analysis for disease detection.
-Real-Time Pest Detection – Instant alerts and treatment recommendations.
-Resource Optimization – Smart irrigation and fertilization insights.
-Weather Integration – API-powered forecasts for better planning.
-Cross-Platform Accessibility – Flutter mobile app & React/Next.js web dashboard.
-Real-Time Alerts – Notifications for critical farm conditions.
+## 🚀 Features
+- **AI-Powered Pest & Disease Detection** – Upload crop images for instant analysis.
+- **Real-Time Weather Forecasting** – Plan irrigation and pesticide application efficiently.
+- **Multi-Language Support** – Ensuring accessibility for farmers across different regions.
+- **User-Friendly & Scalable** – Simple UI with secure cloud storage for data tracking.
+- **Cloud-Based Backend** – Secure data management for improved decision-making.
 
+## 🛠️ Installation & Setup
+Follow these steps to set up and run the project:
 
-# 🛠️ Tech Stack
-Mobile App: Flutter (Dart)
-Web App: React/Next.js
-Backend: Django / Node.js / Firebase
-AI Model: TensorFlow Lite & Cloud-based AI
-APIs: Weather data, soil insights, and pest detection
+### **1️⃣ Clone the Repository**
+```sh
+git clone https://github.com/samarthswami1016/Harvesting-the-Future-AI-Solutions-for-Smallholder-Farmers.git
+cd Harvesting-the-Future-AI-Solutions-for-Smallholder-Farmers
+```
 
-# 🚀 Goal 
-Make AI-driven farming accessible, scalable, and affordable for farmers in developing regions.
+### **2️⃣ Install Dependencies**
+```sh
+npm install
+```
+
+### **3️⃣ Fix Vulnerabilities (If Any)**
+```sh
+npm audit fix
+```
+
+### **4️⃣ Run the Project**
+```sh
+npm run dev
+```
+
+## 📌 Contributing
+Contributions are welcome! Feel free to fork the repository and submit pull requests. For major changes, please open an issue first to discuss what you would like to improve.
+
+## 📜 License
+This project is licensed under the [MIT License](LICENSE).
+
+## 📧 Contact
+For any questions or suggestions, feel free to reach out at **samarthswami1016@gmail.com** or open an issue in the repository.
+
+🚀 **Let's revolutionize farming with AI!** 🌾
+
