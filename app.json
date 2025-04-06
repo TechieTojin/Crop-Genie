@@ -1,68 +1,61 @@
 {
   "expo": {
-    "name": "KisanAI",
-    "slug": "kisanai",
+    "name": "CropGenies",
+    "slug": "cropgenies",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "kisanai",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kisanai.app"
+      "bundleIdentifier": "com.kisanai"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.kisanai.app",
+      "package": "com.kisanai",
+      "versionCode": 1,
       "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.RECORD_AUDIO"
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "INTERNET",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {
       "bundler": "metro",
-      "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "static",
+      "build": {
+        "babel": {
+          "include": ["@supabase/supabase-js", "@supabase/functions-js"]
+        }
+      }
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow KisanAI to use your location."
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Allow KisanAI to access your photos.",
-          "cameraPermission": "Allow KisanAI to access your camera."
-        }
-      ]
+      "expo-secure-store"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "tsconfigPaths": true
     },
+    "scheme": "kisanai",
     "extra": {
       "router": {
         "origin": false
       },
       "eas": {
-        "projectId": "ed652a98-d495-44fb-8e59-1093e6c3212d"
+        "projectId": "0faeb882-3597-4569-892d-1851f81477b0"
       }
-    }
+    },
+    "newArchEnabled": true
   }
 }

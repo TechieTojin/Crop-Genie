@@ -1,18 +1,53 @@
 import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
+// Update Supabase configuration with direct values to ensure connection works
 // Initialize the Supabase client
 const supabaseUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL || 
-                   process.env.EXPO_PUBLIC_SUPABASE_URL;
+                   process.env.EXPO_PUBLIC_SUPABASE_URL ||
+                   'https://qnxzrcuvtthuvlokstij.supabase.co';
+
 const supabaseAnonKey = Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY || 
-                       process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+                       process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
+                       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueHpyY3V2dHRodXZsb2tzdGlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTk5NDU4MDgsImV4cCI6MjAxNTUyMTgwOH0.6rhXWDEQG_z7hrzOOCi9kGsLz0uSfMlQL8FXGNpVGvw';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase URL or Anon Key');
+  console.error('Missing Supabase URL or Anon Key - Authentication will fail');
 }
 
-export const supabase = createClient(supabaseUrl!, supabaseAnonKey!);
+console.log('Initializing Supabase with URL:', 
+  supabaseUrl ? `${supabaseUrl.substring(0, 15)}...` : 'MISSING URL');
+
+// Create Supabase client with proper AsyncStorage configuration for React Native
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: AsyncStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  }
+});
+
+// Add connection check function
+export async function checkSupabaseConnection(): Promise<boolean> {
+  try {
+    console.log('Testing Supabase connection...');
+    const { error } = await supabase.from('farmer_profiles').select('count').limit(1);
+    
+    if (error && !error.message.includes('does not exist')) {
+      console.error('Supabase connection error:', error.message);
+      return false;
+    }
+    
+    console.log('Supabase connection successful');
+    return true;
+  } catch (error) {
+    console.error('Failed to connect to Supabase:', error);
+    return false;
+  }
+}
 
 // Types for our database tables
 export type Farmer = {

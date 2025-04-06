@@ -1,5 +1,7 @@
+import 'expo-router/entry';
 import { registerRootComponent } from 'expo';
 
+// Must be exported or Fast Refresh won't update the context
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);

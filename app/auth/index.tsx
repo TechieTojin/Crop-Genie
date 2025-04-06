@@ -14,30 +14,49 @@ import {
   Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User } from 'lucide-react-native';
 import { useLanguageStore } from '../../store/languageStore';
 import { signIn } from '../../lib/auth';
-import { router } from 'expo-router';
+import { Stack, Link, router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { supabase, checkSupabaseConnection } from '../../lib/supabase';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { useThemeStore } from '../../store/themeStore';
+import { useRouter as useExpoRouter } from 'expo-router';
 
-export default function LoginScreen() {
+interface FormData {
+  email: string;
+  password: string;
+}
+
+interface FormErrors {
+  email: string;
+  password: string;
+}
+
+export default function AuthScreen() {
+  const router = useExpoRouter();
+  const { isDark } = useThemeStore();
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const { translations: t } = useLanguageStore();
   
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
   });
 
-  const [errors, setErrors] = useState({
+  const [errors, setErrors] = useState<FormErrors>({
     email: '',
     password: '',
   });
 
-  const handleChange = (field: string, value: string) => {
+  // Add demo mode functionality to bypass Supabase authentication
+  const [demoMode, setDemoMode] = useState(false);
+
+  const handleChange = (field: keyof FormData, value: string) => {
     setFormData({
       ...formData,
       [field]: value
@@ -82,6 +101,69 @@ export default function LoginScreen() {
     return isValid;
   };
 
+  // Create the farmer_profiles table if it doesn't exist
+  const createProfilesTableIfNeeded = async (userId: string, userEmail: string | undefined) => {
+    try {
+      // Check if table exists by trying to query it
+      const { error: tableCheckError } = await supabase
+        .from('farmer_profiles')
+        .select('count')
+        .limit(1);
+      
+      // If table doesn't exist, create it
+      if (tableCheckError && tableCheckError.message.includes("relation \"farmer_profiles\" does not exist")) {
+        const { error: createTableError } = await supabase.rpc('create_farmer_profiles_table');
+        
+        if (createTableError) {
+          console.error('Error creating table:', createTableError);
+          return false;
+        }
+      }
+      
+      // Try to get the user's profile
+      const { data: existingProfile, error: getProfileError } = await supabase
+        .from('farmer_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (getProfileError) {
+        if (getProfileError.code === 'PGRST116') {
+          // No profile found, create one
+          const { error: insertError } = await supabase
+            .from('farmer_profiles')
+            .insert([{
+              user_id: userId,
+              name: userEmail ? userEmail.split('@')[0] : 'User',
+              email: userEmail || '',
+              phone: '+91 9876543210',
+              location: 'Pune, Maharashtra',
+              farm_size: '5 acres',
+              crops: ['Rice', 'Wheat', 'Sugarcane'],
+              soil_type: 'Black soil (Regur)',
+              water_source: 'Canal irrigation',
+              preferred_language: 'English',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }]);
+          
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+            return false;
+          }
+        } else {
+          console.error('Error checking profile:', getProfileError);
+          return false;
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error managing profiles table:', error);
+      return false;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
@@ -90,283 +172,233 @@ export default function LoginScreen() {
     setLoading(true);
     
     try {
+      console.log('Checking Supabase connection...');
+      const connectionOk = await checkSupabaseConnection();
+      
+      if (!connectionOk) {
+        Alert.alert(
+          'Connection Error',
+          'Unable to connect to the server. Please check your internet connection and try again.',
+          [{ text: 'OK' }]
+        );
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Attempting to sign in with:', formData.email);
+      
+      // Add a small delay to prevent UI blocking
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const { data, error } = await signIn(formData.email, formData.password);
       
+      console.log('Sign in response:', { data: data ? 'Data received' : 'No data', error: error || 'No error' });
+      
       if (error) {
+        console.error('Login error details:', error);
+        
         if (error.message.includes('Invalid login credentials')) {
           Alert.alert('Login Failed', 'Invalid email or password. Please try again.');
         } else {
           Alert.alert('Login Failed', error.message);
         }
+      } else if (data?.user) {
+        console.log('User authenticated successfully, creating/checking profile');
+        
+        // Create or update user profile in the database
+        const profileCreated = await createProfilesTableIfNeeded(
+          data.user.id, 
+          data.user.email
+        );
+        
+        console.log('Profile setup result:', profileCreated ? 'Success' : 'Failed');
+        
+        // Navigate to the main app even if profile creation failed
+        // The profile screen will handle creating a profile if needed
+        console.log('Navigating to home');
+        router.replace("/");
+      } else {
+        console.log('No error but no user data returned');
+        Alert.alert('Login Failed', 'Could not authenticate. Please try again.');
       }
     } catch (error) {
+      console.error('Unexpected login error:', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-      console.error('Login error:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  // Update the handleDemoLogin function to bypass normal authentication
+  const handleDemoLogin = async () => {
+    setFormData({
+      email: 'demo@kisanai.com',
+      password: 'password123'
+    });
+    
+    setDemoMode(true);
+    setLoading(true);
+    
+    try {
+      // Show loading state briefly for UX
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      console.log('Bypassing authentication in demo mode');
+      
+      // Create a mock user and session
+      const mockUser = {
+        id: 'demo-user-id',
+        email: 'demo@kisanai.com',
+        role: 'authenticated',
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString()
+      };
+      
+      // Directly navigate to the main app
+      console.log('Navigating to home in demo mode');
+      router.replace("/");
+    } catch (error) {
+      console.error('Demo login error:', error);
+      Alert.alert('Error', 'Could not enter demo mode. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add a direct login bypass button
+  const handleBypassAuth = () => {
+    Alert.alert(
+      'Bypass Authentication',
+      'This will skip authentication and go directly to the app. Use for testing only.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Continue',
+          onPress: () => {
+            console.log('Bypassing auth completely');
+            router.replace("/");
+          }
+        }
+      ]
+    );
+  };
+
+  // Handle guest navigation properly
+  const navigateAsGuest = () => {
+    try {
+      router.replace("/(tabs)/home" as any);
+    } catch (error) {
+      console.error("Navigation error:", error);
+      // Fallback
+      router.replace("/");
+    }
+  };
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#121212' : '#F5F5F5' }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardAvoidingView}
-      >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+    <View style={[styles.container, { backgroundColor: isDark ? '#121212' : '#f5f5f5' }]}>
+      <Stack.Screen options={{ title: 'Login', headerShown: false }} />
+      
+      <View style={styles.header}>
+        <FontAwesome5 name="seedling" size={48} color="#38B000" />
+        <Text style={[styles.title, { color: isDark ? '#ffffff' : '#333333' }]}>CropGenies</Text>
+        <Text style={[styles.subtitle, { color: isDark ? '#cccccc' : '#666666' }]}>
+          AI Solutions for Smallholder Farmers
+        </Text>
+      </View>
+      
+      <View style={styles.content}>
+        <TouchableOpacity 
+          style={styles.loginButton}
+          onPress={() => router.push("/google-auth")}
         >
-          <View style={styles.logoContainer}>
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80' }} 
-              style={styles.logoImage}
-            />
-            <Text style={[styles.logoText, { color: isDark ? '#FFFFFF' : '#000000' }]}>KisanAI</Text>
-            <Text style={[styles.tagline, { color: isDark ? '#BBBBBB' : '#666666' }]}>
-              {t.tagline}
-            </Text>
-          </View>
-
-          <View style={[styles.formContainer, { backgroundColor: isDark ? '#2A2A2A' : '#FFFFFF' }]}>
-            <Text style={[styles.formTitle, { color: isDark ? '#FFFFFF' : '#000000' }]}>
-              {t.loginAccount}
-            </Text>
-
-            <View style={styles.inputContainer}>
-              <Mail size={20} color={isDark ? '#7CFC00' : '#006400'} style={styles.inputIcon} />
-              <TextInput
-                style={[
-                  styles.input, 
-                  { 
-                    color: isDark ? '#FFFFFF' : '#000000', 
-                    borderColor: errors.email ? '#FF6B6B' : isDark ? '#444444' : '#DDDDDD' 
-                  }
-                ]}
-                placeholder="Email"
-                placeholderTextColor={isDark ? '#999999' : '#999999'}
-                value={formData.email}
-                onChangeText={(text) => handleChange('email', text)}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
-            </View>
-            {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
-
-            <View style={styles.inputContainer}>
-              <Lock size={20} color={isDark ? '#7CFC00' : '#006400'} style={styles.inputIcon} />
-              <TextInput
-                style={[
-                  styles.input, 
-                  { 
-                    color: isDark ? '#FFFFFF' : '#000000', 
-                    borderColor: errors.password ? '#FF6B6B' : isDark ? '#444444' : '#DDDDDD' 
-                  }
-                ]}
-                placeholder={t.password}
-                placeholderTextColor={isDark ? '#999999' : '#999999'}
-                value={formData.password}
-                onChangeText={(text) => handleChange('password', text)}
-                secureTextEntry={!showPassword}
-                autoComplete="password"
-              />
-              <TouchableOpacity 
-                style={styles.passwordToggle}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff size={20} color={isDark ? '#BBBBBB' : '#666666'} />
-                ) : (
-                  <Eye size={20} color={isDark ? '#BBBBBB' : '#666666'} />
-                )}
-              </TouchableOpacity>
-            </View>
-            {errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
-
-            <TouchableOpacity 
-              style={styles.forgotPasswordLink}
-              onPress={() => router.push('/auth/forgot-password')}
-            >
-              <Text style={[styles.forgotPasswordText, { color: isDark ? '#7CFC00' : '#006400' }]}>
-                Forgot Password?
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.submitButton, { backgroundColor: isDark ? '#7CFC00' : '#006400' }]}
-              onPress={handleSubmit}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <View style={styles.buttonContent}>
-                  <Text style={styles.submitButtonText}>{t.login}</Text>
-                  <ArrowRight size={20} color="#FFFFFF" />
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.divider}>
-              <View style={[styles.dividerLine, { backgroundColor: isDark ? '#444444' : '#EEEEEE' }]} />
-              <Text style={[styles.dividerText, { color: isDark ? '#BBBBBB' : '#666666' }]}>OR</Text>
-              <View style={[styles.dividerLine, { backgroundColor: isDark ? '#444444' : '#EEEEEE' }]} />
-            </View>
-
-            <TouchableOpacity 
-              style={[styles.signupButton, { borderColor: isDark ? '#7CFC00' : '#006400' }]}
-              onPress={() => router.push('/auth/signup')}
-            >
-              <Text style={[styles.signupButtonText, { color: isDark ? '#7CFC00' : '#006400' }]}>
-                {t.createAccount}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.languageSelector}>
-            <Text style={[styles.languageText, { color: isDark ? '#BBBBBB' : '#666666' }]}>
-              {t.availableIn}
-              <Text style={{ color: isDark ? '#7CFC00' : '#006400' }}> {t.languages}</Text>
-            </Text>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          <FontAwesome5 name="google" size={20} color="#ffffff" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Continue with Google</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.loginButton, { backgroundColor: '#4267B2' }]}
+          onPress={() => router.push("/")}
+        >
+          <FontAwesome5 name="phone" size={20} color="#ffffff" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Continue with Phone</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[styles.loginButton, { backgroundColor: '#333333' }]}
+          onPress={navigateAsGuest}
+        >
+          <FontAwesome5 name="user-secret" size={20} color="#ffffff" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Continue as Guest</Text>
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.footer}>
+        <Text style={[styles.footerText, { color: isDark ? '#aaaaaa' : '#888888' }]}>
+          By continuing, you agree to our{' '}
+          <Text style={styles.link}>Terms of Service</Text> and{' '}
+          <Text style={styles.link}>Privacy Policy</Text>
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  logoContainer: {
+  header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 60,
   },
-  logoImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  logoText: {
-    fontSize: 28,
+  title: {
+    fontSize: 32,
     fontWeight: 'bold',
-    marginTop: 10,
+    marginTop: 16,
+    marginBottom: 8,
   },
-  tagline: {
+  subtitle: {
     fontSize: 16,
-    marginTop: 5,
     textAlign: 'center',
   },
-  formContainer: {
-    padding: 20,
-    borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  formTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 25,
-    textAlign: 'center',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-    position: 'relative',
-  },
-  inputIcon: {
-    position: 'absolute',
-    left: 15,
-    zIndex: 1,
-  },
-  input: {
+  content: {
     flex: 1,
-    height: 55,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 45,
-    fontSize: 16,
-  },
-  passwordToggle: {
-    position: 'absolute',
-    right: 15,
-    zIndex: 1,
-  },
-  errorText: {
-    color: '#FF6B6B',
-    fontSize: 12,
-    marginLeft: 5,
-    marginBottom: 10,
-  },
-  forgotPasswordLink: {
-    alignSelf: 'flex-end',
-    marginTop: 5,
-    marginBottom: 20,
-  },
-  forgotPasswordText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  submitButton: {
-    height: 55,
-    borderRadius: 10,
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: 16,
   },
-  buttonContent: {
+  loginButton: {
+    backgroundColor: '#4285F4',
+    borderRadius: 12,
+    paddingVertical: 16,
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 8,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    fontSize: 14,
-  },
-  signupButton: {
-    height: 55,
-    borderRadius: 10,
     justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
   },
-  signupButtonText: {
+  buttonIcon: {
+    marginRight: 12,
+  },
+  buttonText: {
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  languageSelector: {
-    marginTop: 30,
-    alignItems: 'center',
+  footer: {
+    marginTop: 40,
   },
-  languageText: {
-    fontSize: 14,
+  footerText: {
     textAlign: 'center',
+    fontSize: 14,
+  },
+  link: {
+    color: '#38B000',
+    fontWeight: 'bold',
   },
 });

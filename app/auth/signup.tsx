@@ -18,6 +18,22 @@ import { Mail, Lock, Eye, EyeOff, ArrowLeft, User, Check } from 'lucide-react-na
 import { useLanguageStore } from '../../store/languageStore';
 import { signUp } from '../../lib/auth';
 import { router } from 'expo-router';
+import { checkSupabaseConnection } from '../../lib/supabase';
+
+// Define proper types for the form data and errors
+interface FormData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+interface FormErrors {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
 export default function SignupScreen() {
   const colorScheme = useColorScheme();
@@ -28,21 +44,21 @@ export default function SignupScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
 
-  const [errors, setErrors] = useState({
+  const [errors, setErrors] = useState<FormErrors>({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: keyof FormData, value: string) => {
     setFormData({
       ...formData,
       [field]: value
@@ -114,29 +130,56 @@ export default function SignupScreen() {
     setLoading(true);
     
     try {
+      console.log('Checking Supabase connection...');
+      const connectionOk = await checkSupabaseConnection();
+      
+      if (!connectionOk) {
+        Alert.alert(
+          'Connection Error',
+          'Unable to connect to the server. Please check your internet connection and try again.',
+          [{ text: 'OK' }]
+        );
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Attempting to sign up with:', formData.email);
+      
+      // Add a small delay to prevent UI blocking
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const { data, error } = await signUp(formData.email, formData.password);
       
+      console.log('Sign up response:', { data: data ? 'Data received' : 'No data', error: error || 'No error' });
+      
       if (error) {
+        console.error('Signup error details:', error);
+        
         if (error.message.includes('already registered')) {
           Alert.alert('Signup Failed', 'This email is already registered. Please use a different email or try logging in.');
         } else {
           Alert.alert('Signup Failed', error.message);
         }
       } else {
+        console.log('Account created successfully');
+        
         Alert.alert(
           'Account Created',
           'Your account has been created successfully. Please sign in with your credentials.',
           [
             { 
               text: 'OK', 
-              onPress: () => router.replace('/auth') 
+              onPress: () => {
+                console.log('Navigating to login screen');
+                router.replace("/auth" as any);
+              }
             }
           ]
         );
       }
     } catch (error) {
+      console.error('Unexpected signup error:', error);
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-      console.error('Signup error:', error);
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system';
 
 // Plant.id API key
 const PLANTID_API_KEY = Constants.expoConfig?.extra?.EXPO_PUBLIC_PLANTID_API_KEY || 
@@ -85,10 +86,25 @@ const imageUriToBase64 = async (uri: string): Promise<string | null> => {
       return uri.split(',')[1];
     }
     
-    // For native platforms, we would use FileSystem
-    // Since this is primarily for web, we'll return a mock response
-    console.warn('Base64 conversion not fully implemented for native platforms');
-    return 'mock_base64_data';
+    // For native platforms, use FileSystem
+    
+    // Check if file exists
+    const fileInfo = await FileSystem.getInfoAsync(uri);
+    if (!fileInfo.exists) {
+      console.error('File does not exist:', uri);
+      return null;
+    }
+    
+    try {
+      // Read the file in base64 format
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      return base64;
+    } catch (readError) {
+      console.error('Error reading file as base64:', readError);
+      return null;
+    }
   } catch (error) {
     console.error('Error converting image to base64:', error);
     return null;
