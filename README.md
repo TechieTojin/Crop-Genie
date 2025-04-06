@@ -45,8 +45,8 @@ Follow these steps to set up and run the project:
 
 ### **1️⃣ Clone the Repository**
 ```sh
-git clone https://github.com/samarthswami1016/Harvesting-the-Future-AI-Solutions-for-Smallholder-Farmers.git
-cd Harvesting-the-Future-AI-Solutions-for-Smallholder-Farmers
+git clone https://github.com/TechieTojin/Crop-Genie.git
+cd Crop-Genie
 ```
 
 ### **2️⃣ Install Dependencies**
@@ -82,19 +82,20 @@ Contributions are welcome! Feel free to fork the repository and submit pull requ
 This project is licensed under the [MIT License](LICENSE).
 
 ## 📧 Contact
-For any questions or suggestions, feel free to reach out at **samarthswami1016@gmail.com** or open an issue in the repository.
+For any questions or suggestions, please contact **tojinsimson28@gmail.com** or open an issue in the repository.
 
 🚀 **CropGenies and Co - Transforming farming with AI!** 🌾
-
-┌────────────────┐     ┌───────────────────┐     ┌───────────────────┐
-│                │     │                   │     │                   │
-│  User Login    │────►│  Dashboard Home   │────►│  Feature Selection│
-│                │     │                   │     │                   │
-└────────────────┘     └───────────────────┘     └─────────┬─────────┘
-                                                           │
-                       ┌───────────────────┐     ┌─────────▼─────────┐
-                       │                   │     │                   │
-                       │   Action Result   │◄────│   Feature Usage   │
-                       │                   │     │                   │
-                       └───────────────────┘     └───────────────────┘
-
+![IMG-20250406-WA0009](https://github.com/user-attachments/assets/8e43bcf4-c254-44ff-907d-994f8e317c8f)
+![IMG-20250406-WA0008](https://github.com/user-attachments/assets/9a8b8dd1-6e58-442b-9ab8-9b513788fa5a)
+![IMG-20250406-WA0007](https://github.com/user-attachments/assets/12da1ad1-fbb6-4eb5-9a6d-51de745e3829)
+![IMG-20250406-WA0006](https://github.com/user-attachments/assets/24d085b9-4d26-4501-a8c1-0717960ec546)
+![IMG-20250406-WA0005](https://github.com/user-attachments/assets/1550de09-6342-4bc8-a4c4-df857c48eee8)
+![WhatsApp Image 2025-04-06 at 12 56 40_5d492294](https://github.com/user-attachments/assets/1432a640-926e-424e-adef-d38ce5878409)
+![IMG-20250406-WA0017](https://github.com/user-attachments/assets/20056c46-bcdf-4a42-a828-01868d7e6968)
+![IMG-20250406-WA0016](https://github.com/user-attachments/assets/d9b5d863-94ba-4ea0-bec1-d8052917c1f3)
+![IMG-20250406-WA0015](https://github.com/user-attachments/assets/59b45431-02ab-453a-b0b8-0b67cb73a5ee)
+![IMG-20250406-WA0014](https://github.com/user-attachments/assets/5084b366-19b8-420c-b511-30801eb30da0)
+![IMG-20250406-WA0013](https://github.com/user-attachments/assets/c965c390-5e92-49b9-a300-6c84adc0026f)
+![IMG-20250406-WA0012](https://github.com/user-attachments/assets/d605522b-ed9c-45bb-8bb3-32429b8e5a65)
+![IMG-20250406-WA0011](https://github.com/user-attachments/assets/9cb1a70a-d4f1-4842-b55c-c6d0ccd6486e)
+![IMG-20250406-WA0010](https://github.com/user-attachments/assets/442a5984-b1d6-4d5e-98e0-5cb2c7405bcc)
